@@ -384,7 +384,6 @@
             Im Notfall bin ich unter der oben genannten Telefonnummer erreichbar.
           </p>
           <div class="unterschrift">Ort, Datum, Unterschrift eines Elternteils</div>
-          <p class="hinweis">Muster aus der Demo-Version – keine gültige Erklärung.</p>
         </div>
       </div>
     </section>
@@ -423,10 +422,6 @@
       <p>
         Jede Station bekommt einen eigenen QR-Code. Die Teams scannen ihn mit dem Handy
         und tragen dort ihre Punkte ein.
-      </p>
-      <p class="hinweis">
-        Hinweis: Die QR-Codes zeigen auf die Adresse, unter der diese Seite gerade geöffnet ist.
-        Damit sie auf einem anderen Handy funktionieren, muss die Seite online liegen (z. B. über GitHub Pages).
       </p>
       <ul class="stationen-liste" id="stationen-liste"></ul>
     </section>
@@ -773,7 +768,9 @@
     // Baut die Liste aller Stationen mit QR-Code (einmal beim Start)
     function baueStationenListe() {
       const liste = $("stationen-liste");
-      // Adresse dieser Seite ohne den Teil hinter dem #
+      // Adresse dieser Seite ohne den Teil hinter dem #.
+      // Wichtig: Damit die QR-Codes auf anderen Handys funktionieren,
+      // muss die Seite online liegen (z. B. GitHub Pages), nicht nur als Datei.
       const basisAdresse = location.href.split("#")[0];
 
       STATIONEN.forEach(function (station) {

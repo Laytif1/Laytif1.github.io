@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wassertor Action-Day – Demo</title>
+
+  <!--
+    Bibliothek "qrcode.js" (von davidshimjs) über ein CDN.
+    Sie erzeugt QR-Codes direkt im Browser, ohne Server.
+    Ohne Internet funktioniert nur dieser Teil nicht – der Rest der Seite schon.
+  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    /* =========================================================
+       DESIGN
+       Eine Akzentfarbe, weißer Hintergrund, Arial.
+       Mobile first: Die Grundregeln gelten fürs Handy,
+       größere Bildschirme bekommen per @media kleine Anpassungen.
+       ========================================================= */
+
+    :root {
+      --akzent: #1F4E79;   /* Dunkelblau: Überschriften, Buttons, Tabellenkopf */
+      --text: #222222;     /* normale Textfarbe */
+      --grau: #666666;     /* Hinweise, Nebentext */
+      --linie: #d0d0d0;    /* Rahmen und Trennlinien */
+      --hell: #f3f6f9;     /* sehr heller Hintergrund für Meldungen */
+    }
+
+    * { box-sizing: border-box; }
+
+    /* Das Attribut "hidden" soll immer gewinnen, auch gegen .button usw. */
+    [hidden] { display: none !important; }
+
+    body {
+      margin: 0;
+      background: #ffffff;
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 14px 16px 6px;
+    }
+    .seitentitel {
+      margin: 0;
+      font-size: 20px;
+      color: var(--akzent);
+    }
+    .untertitel {
+      margin: 0;
+      font-size: 15px;
+      color: var(--grau);
+    }
+
+    /* Navigation (Tabs) – bricht auf dem Handy einfach um */
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 0 8px;
+      border-bottom: 1px solid var(--linie);
+    }
+    nav a {
+      padding: 12px 10px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 17px;
+      border-bottom: 3px solid transparent;
+    }
+    nav a.aktiv {
+      color: var(--akzent);
+      font-weight: bold;
+      border-bottom-color: var(--akzent);
+    }
+
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 8px 16px 40px;
+    }
+
+    h1, h2, h3 {
+      color: var(--akzent);
+      line-height: 1.25;
+    }
+    h1 { font-size: 28px; }
+    h2 { font-size: 24px; }
+    h3 { font-size: 20px; }
+
+    /* Große Buttons, gut mit dem Finger zu treffen */
+    .button {
+      display: inline-block;
+      min-height: 52px;
+      padding: 14px 24px;
+      margin: 4px 0;
+      background: var(--akzent);
+      color: #ffffff;
+      border: 2px solid var(--akzent);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .button.zweitrangig {
+      background: #ffffff;
+      color: var(--akzent);
+    }
+    .button-reihe {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    /* Formulare */
+    .feld { margin-bottom: 20px; }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .optional { font-weight: normal; color: var(--grau); }
+    input[type="text"],
+    input[type="tel"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 18px;
+      color: var(--text);
+      background: #ffffff;
+      border: 1px solid #888888;
+      border-radius: 4px;
+    }
+    textarea { min-height: 90px; }
+    input:focus, select:focus, textarea:focus, .button:focus, nav a:focus {
+      outline: 3px solid var(--akzent);
+      outline-offset: 2px;
+    }
+    .checkbox-zeile {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-weight: normal;
+    }
+    .checkbox-zeile input {
+      width: 26px;
+      height: 26px;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    /* Rückmeldungen nach dem Speichern */
+    .meldung {
+      background: var(--hell);
+      border-left: 4px solid var(--akzent);
+      padding: 12px 16px;
+      margin: 16px 0;
+    }
+    .hinweis {
+      color: var(--grau);
+      font-size: 15px;
+    }
+
+    /* Tabellen: auf dem Handy seitlich scrollbar statt zu quetschen */
+    .tabelle-rahmen { overflow-x: auto; margin: 16px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 16px;
+    }
+    th {
+      background: var(--akzent);
+      color: #ffffff;
+      text-align: left;
+      padding: 10px;
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--linie);
+      vertical-align: top;
+    }
+    td.zahl, th.zahl { text-align: center; }
+
+    /* Stationen-Übersicht mit QR-Codes */
+    .stationen-liste {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .station-karte {
+      border: 1px solid var(--linie);
+      border-radius: 4px;
+      padding: 16px;
+    }
+    .station-karte h3 { margin-top: 0; }
+    .qr { width: 180px; height: 180px; margin: 12px 0; }
+    .qr img, .qr canvas { display: block; }
+    .link-text { font-size: 13px; color: var(--grau); word-break: break-all; }
+
+    .station-nummer { color: var(--grau); margin-bottom: 0; }
+    .aufgabe { font-size: 20px; }
+
+    /* Einverständniserklärung */
+    .erklaerung {
+      border: 1px solid var(--linie);
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .erklaerung dl { margin: 16px 0; }
+    .erklaerung dt { font-weight: bold; }
+    .erklaerung dd { margin: 0 0 8px 0; }
+    .unterschrift {
+      margin-top: 56px;
+      width: 300px;
+      max-width: 100%;
+      border-top: 1px solid var(--text);
+      padding-top: 4px;
+      font-size: 14px;
+    }
+
+    footer {
+      border-top: 1px solid var(--linie);
+      padding: 16px;
+      font-size: 14px;
+      color: var(--grau);
+      text-align: center;
+    }
+
+    /* Ab Tablet-Breite: Buttons nebeneinander, Stationen in Spalten */
+    @media (min-width: 640px) {
+      .stationen-liste { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 900px) {
+      .stationen-liste { grid-template-columns: repeat(3, 1fr); }
+    }
+    /* Auf schmalen Handys: Buttons über die ganze Breite */
+    @media (max-width: 480px) {
+      .button { width: 100%; }
+    }
+
+    /* Beim Drucken nur die Einverständniserklärung zeigen */
+    @media print {
+      header, nav, footer, .nicht-drucken { display: none !important; }
+      body { font-size: 12pt; }
+      main { padding: 0; }
+      .erklaerung { border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <p class="seitentitel">Wassertor Action-Day</p>
+    <p class="untertitel">Kiez-Rallye für Kids</p>
+  </header>
+
+  <!--
+    Navigation: Jeder Link ändert nur den Teil hinter dem # in der Adresse.
+    Das JavaScript unten liest diesen Teil aus und zeigt den passenden Bereich.
+  -->
+  <nav>
+    <a href="#start" data-bereich="start">Start</a>
+    <a href="#anmeldung" data-bereich="anmeldung">Anmeldung</a>
+    <a href="#uebersicht" data-bereich="uebersicht">Übersicht</a>
+    <a href="#stationen" data-bereich="stationen">Stationen</a>
+    <a href="#ergebnisse" data-bereich="ergebnisse">Ergebnisse</a>
+  </nav>
+
+  <main>
+
+    <!-- ===================== 1. START ===================== -->
+    <section id="start" class="bereich">
+      <h1>Wassertor Action-Day: Kiez-Rallye für Kids</h1>
+      <p>
+        <strong>Datum:</strong> <span id="datum-anzeige"></span><br>
+        <strong>Ort:</strong> Mehrgenerationenhaus Wassertor e.V., Berlin-Kreuzberg
+      </p>
+      <p>
+        Beim Action-Day ziehen Kinder und Jugendliche aus dem Kiez in kleinen Teams von Station zu Station.
+        Dort warten Fußball, Basketball, eine Sprint-Staffel und Ballwurf auf euch.
+        Es geht nicht ums Gewinnen, sondern darum, zusammen Spaß zu haben.
+      </p>
+      <p>Mitmachen können alle zwischen 6 und 18 Jahren. Die Teilnahme ist kostenlos.</p>
+      <div class="button-reihe">
+        <a href="#anmeldung" class="button">Jetzt anmelden</a>
+      </div>
+    </section>
+
+    <!-- ===================== 2. ANMELDUNG ===================== -->
+    <section id="anmeldung" class="bereich" hidden>
+
+      <!-- Teil A: das Formular -->
+      <div id="anmeldung-formular-bereich">
+        <h2>Anmeldung</h2>
+        <p>Liebe Eltern, bitte füllt dieses Formular für euer Kind aus. Felder mit * sind Pflicht.</p>
+
+        <!-- "required" sorgt dafür, dass der Browser leere Pflichtfelder selbst meldet -->
+        <form id="anmelde-formular" novalidate>
+          <div class="feld">
+            <label for="kind-vorname">Vorname des Kindes *</label>
+            <input type="text" id="kind-vorname" required maxlength="40" autocomplete="off">
+          </div>
+
+          <div class="feld">
+            <label for="kind-alter">Alter *</label>
+            <select id="kind-alter" required>
+              <option value="">Bitte wählen</option>
+              <!-- Die Optionen 6 bis 18 werden per JavaScript eingefügt -->
+            </select>
+          </div>
+
+          <div class="feld">
+            <label for="eltern-name">Name eines Elternteils *</label>
+            <input type="text" id="eltern-name" required maxlength="60" autocomplete="off">
+          </div>
+
+          <div class="feld">
+            <label for="telefon">Telefonnummer für Notfälle *</label>
+            <input type="tel" id="telefon" required maxlength="30" autocomplete="off">
+          </div>
+
+          <div class="feld">
+            <label for="hinweise">Hinweise, z. B. Allergien <span class="optional">(freiwillig)</span></label>
+            <textarea id="hinweise" maxlength="300"></textarea>
+          </div>
+
+          <div class="feld">
+            <label class="checkbox-zeile">
+              <input type="checkbox" id="einverstanden" required>
+              <span>Ich bin einverstanden, dass mein Kind am Aktionstag teilnimmt. *</span>
+            </label>
+          </div>
+
+          <!-- Hier erscheinen Fehlermeldungen, falls etwas fehlt -->
+          <p id="formular-fehler" class="meldung" hidden></p>
+
+          <button type="submit" class="button">Anmeldung absenden</button>
+        </form>
+      </div>
+
+      <!-- Teil B: Bestätigung nach dem Absenden -->
+      <div id="bestaetigung" hidden>
+        <h2>Danke, die Anmeldung hat geklappt!</h2>
+        <p id="bestaetigung-text"></p>
+        <div class="button-reihe">
+          <button type="button" class="button" id="erklaerung-zeigen">Einverständniserklärung anzeigen</button>
+          <button type="button" class="button zweitrangig" id="neue-anmeldung">Weiteres Kind anmelden</button>
+        </div>
+      </div>
+
+      <!-- Teil C: druckbare Einverständniserklärung -->
+      <div id="erklaerung-bereich" hidden>
+        <div class="button-reihe nicht-drucken">
+          <button type="button" class="button" id="drucken">Jetzt drucken</button>
+          <button type="button" class="button zweitrangig" id="erklaerung-schliessen">Zurück</button>
+        </div>
+
+        <div class="erklaerung" id="erklaerung">
+          <h2>Einverständniserklärung</h2>
+          <p>
+            für die Teilnahme am <strong>Wassertor Action-Day: Kiez-Rallye für Kids</strong><br>
+            Veranstalter: Mehrgenerationenhaus Wassertor e.V., Berlin-Kreuzberg<br>
+            Datum: <span id="erkl-datum"></span>
+          </p>
+          <dl>
+            <dt>Vorname des Kindes</dt><dd id="erkl-kind"></dd>
+            <dt>Alter</dt><dd id="erkl-alter"></dd>
+            <dt>Elternteil</dt><dd id="erkl-eltern"></dd>
+            <dt>Telefon für Notfälle</dt><dd id="erkl-telefon"></dd>
+            <dt>Hinweise</dt><dd id="erkl-hinweise"></dd>
+          </dl>
+          <p>
+            Ich bin einverstanden, dass mein Kind am Aktionstag teilnimmt.
+            Im Notfall bin ich unter der oben genannten Telefonnummer erreichbar.
+          </p>
+          <div class="unterschrift">Ort, Datum, Unterschrift eines Elternteils</div>
+          <p class="hinweis">Muster aus der Demo-Version – keine gültige Erklärung.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 3. ÜBERSICHT (Team) ===================== -->
+    <section id="uebersicht" class="bereich" hidden>
+      <h2>Übersicht der Anmeldungen</h2>
+      <p class="meldung">In der echten Version ist diese Seite mit einem Passwort geschützt.</p>
+
+      <p><strong id="anmelde-zaehler"></strong></p>
+
+      <div class="tabelle-rahmen">
+        <table>
+          <thead>
+            <tr>
+              <th>Kind</th>
+              <th>Alter</th>
+              <th>Elternteil</th>
+              <th>Telefon</th>
+              <th>Hinweise</th>
+            </tr>
+          </thead>
+          <tbody id="anmelde-tabelle"></tbody>
+        </table>
+      </div>
+
+      <div class="button-reihe">
+        <button type="button" class="button" id="daten-loeschen">Alle Demo-Daten löschen</button>
+        <button type="button" class="button zweitrangig" id="beispiele-laden">Beispieldaten neu laden</button>
+      </div>
+    </section>
+
+    <!-- ===================== 4a. STATIONEN-ÜBERSICHT ===================== -->
+    <section id="stationen" class="bereich" hidden>
+      <h2>Stationen der Rallye</h2>
+      <p>
+        Jede Station bekommt einen eigenen QR-Code. Die Teams scannen ihn mit dem Handy
+        und tragen dort ihre Punkte ein.
+      </p>
+      <p class="hinweis">
+        Hinweis: Die QR-Codes zeigen auf die Adresse, unter der diese Seite gerade geöffnet ist.
+        Damit sie auf einem anderen Handy funktionieren, muss die Seite online liegen (z. B. über GitHub Pages).
+      </p>
+      <ul class="stationen-liste" id="stationen-liste"></ul>
+    </section>
+
+    <!-- ===================== 4b. EINZELNE STATION ===================== -->
+    <section id="station" class="bereich" hidden>
+      <p><a href="#stationen">Zurück zu allen Stationen</a></p>
+      <p class="station-nummer" id="station-nummer"></p>
+      <h2 id="station-name"></h2>
+      <p class="aufgabe" id="station-aufgabe"></p>
+
+      <form id="station-formular" novalidate>
+        <div class="feld">
+          <label for="team-name">Euer Teamname</label>
+          <input type="text" id="team-name" maxlength="40" autocomplete="off">
+        </div>
+
+        <!-- Je nach Station wird entweder das Punkte-Feld oder das Lösungs-Feld gezeigt -->
+        <div class="feld" id="feld-punkte">
+          <label for="punkte">Punkte (0 bis 10)</label>
+          <select id="punkte">
+            <option value="">Bitte wählen</option>
+            <!-- Optionen 0 bis 10 kommen per JavaScript -->
+          </select>
+        </div>
+
+        <div class="feld" id="feld-loesung" hidden>
+          <label for="loesung">Eure Lösung</label>
+          <input type="text" id="loesung" maxlength="60" autocomplete="off">
+        </div>
+
+        <p id="station-fehler" class="meldung" hidden></p>
+        <button type="submit" class="button">Speichern</button>
+      </form>
+
+      <p id="station-meldung" class="meldung" hidden></p>
+    </section>
+
+    <!-- ===================== 5. ERGEBNISSE ===================== -->
+    <section id="ergebnisse" class="bereich" hidden>
+      <h2>Ergebnisse</h2>
+      <p>
+        Hier seht ihr, welches Team an welcher Station wie viele Punkte gesammelt hat.
+        Die Teams stehen alphabetisch, nicht nach Punkten. Es gibt keine Rangliste: Mitmachen ist das Wichtigste.
+      </p>
+      <div class="tabelle-rahmen">
+        <table>
+          <thead id="ergebnis-kopf"></thead>
+          <tbody id="ergebnis-tabelle"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    Wassertor Action-Day · Mehrgenerationenhaus Wassertor e.V. · Demo für ein Uni-Projekt
+  </footer>
+
+
+  <script>
+    /* =========================================================
+       1. EINSTELLUNGEN
+       Alles, was man später leicht ändern möchte, steht hier oben.
+       ========================================================= */
+
+    const DATUM = "X";                 // Platzhalter, das Datum steht noch nicht fest
+    const MINDEST_ANMELDUNGEN = 15;    // so viele Kinder brauchen wir mindestens
+
+    // Namen der Speicherplätze im localStorage
+    const SPEICHER_ANMELDUNGEN = "wassertor_anmeldungen";
+    const SPEICHER_ERGEBNISSE  = "wassertor_ergebnisse";
+    const SPEICHER_START       = "wassertor_schon_geoeffnet";
+    const SPEICHER_TEAM        = "wassertor_letzter_teamname";
+
+    /*
+      Die Stationen. Neue Stationen einfach unten anhängen (nr fortlaufend),
+      der Rest der Seite (QR-Codes, Ergebnistabelle) passt sich automatisch an.
+      typ "punkte":  Die Betreuung an der Station vergibt 0 bis 10 Punkte.
+      typ "raetsel": Das Team gibt eine Antwort ein, die Seite prüft sie.
+                     Wird gerade nicht genutzt. Beispiel für eine Rätsel-Station:
+                     { nr: 5, name: "Kiez-Rätsel", aufgabe: "Wie heißt ...?",
+                       typ: "raetsel", loesung: "Wassertorstraße" }
+    */
+    const STATIONEN = [
+      {
+        nr: 1,
+        name: "Fußball",
+        aufgabe: "Jedes Teammitglied schießt aufs Tor. Jedes Tor zählt einen Punkt, höchstens 10.",
+        typ: "punkte"
+      },
+      {
+        nr: 2,
+        name: "Basketball",
+        aufgabe: "Werft den Ball in den Korb. Jeder Treffer zählt einen Punkt, höchstens 10.",
+        typ: "punkte"
+      },
+      {
+        nr: 3,
+        name: "Sprint-Staffel",
+        aufgabe: "Jedes Teammitglied läuft eine Runde. Die Betreuung an der Station gibt euch danach 0 bis 10 Punkte.",
+        typ: "punkte"
+      },
+      {
+        nr: 4,
+        name: "Ballwurf",
+        aufgabe: "Werft mit Bällen auf die Dosenpyramide. Für jede Dose, die umfällt, gibt es einen Punkt, höchstens 10.",
+        typ: "punkte"
+      }
+    ];
+
+    // Beim Rätsel: richtig = 10 Punkte, falsch = 5 Punkte (Mitmachen zählt auch!)
+    const RAETSEL_PUNKTE_RICHTIG = 10;
+    const RAETSEL_PUNKTE_VERSUCHT = 5;
+
+
+    /* =========================================================
+       2. HILFSFUNKTIONEN FÜR DEN localStorage
+       localStorage kann nur Text speichern. Deshalb wandeln wir
+       Listen mit JSON.stringify in Text um und mit JSON.parse zurück.
+       ========================================================= */
+
+    function ladeListe(schluessel) {
+      try {
+        const text = localStorage.getItem(schluessel);
+        return text ? JSON.parse(text) : [];
+      } catch (fehler) {
+        // Falls der Speicher kaputt oder gesperrt ist: einfach leere Liste
+        return [];
+      }
+    }
+
+    function speichereListe(schluessel, liste) {
+      try {
+        localStorage.setItem(schluessel, JSON.stringify(liste));
+      } catch (fehler) {
+        alert("Speichern hat leider nicht geklappt. Ist der private Modus des Browsers aktiv?");
+      }
+    }
+
+    // Kurzer Helfer: Element über seine id holen
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    // Erstellt eine Tabellenzelle. textContent schützt davor, dass
+    // eingegebener Text als HTML-Code ausgeführt wird.
+    function zelle(inhalt, klasse) {
+      const td = document.createElement("td");
+      td.textContent = inhalt;
+      if (klasse) td.className = klasse;
+      return td;
+    }
+
+
+    /* =========================================================
+       3. BEISPIELDATEN
+       Beim allerersten Öffnen legen wir 3 erfundene Anmeldungen an,
+       damit die Übersicht in der Präsentation nicht leer ist.
+       ========================================================= */
+
+    function beispielAnmeldungen() {
+      return [
+        { kind: "Mila",  alter: 8,  eltern: "Sandra Beispiel", telefon: "0151 00000001", hinweise: "" },
+        { kind: "Emre",  alter: 11, eltern: "Ayşe Muster",     telefon: "0151 00000002", hinweise: "Nussallergie" },
+        { kind: "Jonas", alter: 7,  eltern: "Thomas Test",     telefon: "0151 00000003", hinweise: "Trägt eine Brille, bitte beim Sport aufpassen" }
+      ];
+    }
+
+    function beimErstenOeffnen() {
+      if (localStorage.getItem(SPEICHER_START) === null) {
+        speichereListe(SPEICHER_ANMELDUNGEN, beispielAnmeldungen());
+        localStorage.setItem(SPEICHER_START, "ja");
+      }
+    }
+
+
+    /* =========================================================
+       4. NAVIGATION
+       Die Adresse endet z. B. auf #anmeldung oder #station-3.
+       Wir blenden alle Bereiche aus und nur den passenden ein.
+       ========================================================= */
+
+    function zeigeBereich() {
+      // "#station-3" -> "station-3"; ohne # nehmen wir "start"
+      let ziel = location.hash.slice(1) || "start";
+      let stationNr = null;
+
+      // Ist es ein Stations-Link wie "station-3"?
+      const treffer = ziel.match(/^station-(\d+)$/);
+      if (treffer) {
+        stationNr = Number(treffer[1]);
+        ziel = "station";
+      }
+
+      // Unbekannte Adresse? Dann zur Startseite.
+      if (!$(ziel) || (ziel === "station" && !findeStation(stationNr))) {
+        ziel = "start";
+      }
+
+      // Alle Bereiche ausblenden, nur das Ziel zeigen
+      document.querySelectorAll(".bereich").forEach(function (bereich) {
+        bereich.hidden = (bereich.id !== ziel);
+      });
+
+      // Aktiven Tab markieren (eine einzelne Station gehört zu "Stationen")
+      const aktiverTab = (ziel === "station") ? "stationen" : ziel;
+      document.querySelectorAll("nav a").forEach(function (link) {
+        link.classList.toggle("aktiv", link.dataset.bereich === aktiverTab);
+      });
+
+      // Inhalte frisch aufbauen, damit sie immer aktuell sind
+      if (ziel === "anmeldung")  zeigeAnmeldeTeil("formular");
+      if (ziel === "uebersicht") zeigeUebersicht();
+      if (ziel === "station")    zeigeStation(stationNr);
+      if (ziel === "ergebnisse") zeigeErgebnisse();
+
+      window.scrollTo(0, 0);
+    }
+
+    function findeStation(nr) {
+      return STATIONEN.find(function (s) { return s.nr === nr; });
+    }
+
+
+    /* =========================================================
+       5. ANMELDUNG
+       ========================================================= */
+
+    let letzteAnmeldung = null; // merkt sich die gerade abgeschickte Anmeldung
+
+    // Der Anmeldebereich hat drei Teile. Diese Funktion zeigt genau einen davon.
+    function zeigeAnmeldeTeil(teil) {
+      $("anmeldung-formular-bereich").hidden = (teil !== "formular");
+      $("bestaetigung").hidden               = (teil !== "bestaetigung");
+      $("erklaerung-bereich").hidden         = (teil !== "erklaerung");
+    }
+
+    function anmeldungAbsenden(ereignis) {
+      ereignis.preventDefault(); // Seite soll nicht neu laden
+
+      // Werte auslesen; trim() entfernt Leerzeichen am Anfang und Ende
+      const anmeldung = {
+        kind:     $("kind-vorname").value.trim(),
+        alter:    Number($("kind-alter").value),
+        eltern:   $("eltern-name").value.trim(),
+        telefon:  $("telefon").value.trim(),
+        hinweise: $("hinweise").value.trim()
+      };
+
+      // Pflichtfelder prüfen und fehlende sammeln
+      const fehlt = [];
+      if (!anmeldung.kind)    fehlt.push("Vorname des Kindes");
+      if (!anmeldung.alter)   fehlt.push("Alter");
+      if (!anmeldung.eltern)  fehlt.push("Name eines Elternteils");
+      if (!anmeldung.telefon) fehlt.push("Telefonnummer");
+      if (!$("einverstanden").checked) fehlt.push("Einverständnis (Häkchen)");
+
+      if (fehlt.length > 0) {
+        const fehlerBox = $("formular-fehler");
+        fehlerBox.textContent = "Bitte noch ausfüllen: " + fehlt.join(", ") + ".";
+        fehlerBox.hidden = false;
+        return;
+      }
+      $("formular-fehler").hidden = true;
+
+      // Speichern: Liste laden, neue Anmeldung anhängen, Liste zurückschreiben
+      const liste = ladeListe(SPEICHER_ANMELDUNGEN);
+      liste.push(anmeldung);
+      speichereListe(SPEICHER_ANMELDUNGEN, liste);
+
+      letzteAnmeldung = anmeldung;
+      $("anmelde-formular").reset();
+
+      $("bestaetigung-text").textContent =
+        anmeldung.kind + " ist jetzt für den Action-Day angemeldet. Wir freuen uns!";
+      zeigeAnmeldeTeil("bestaetigung");
+      window.scrollTo(0, 0);
+    }
+
+    // Füllt die Einverständniserklärung mit den Daten der letzten Anmeldung
+    function zeigeErklaerung() {
+      if (!letzteAnmeldung) return;
+      $("erkl-datum").textContent    = DATUM;
+      $("erkl-kind").textContent     = letzteAnmeldung.kind;
+      $("erkl-alter").textContent    = letzteAnmeldung.alter + " Jahre";
+      $("erkl-eltern").textContent   = letzteAnmeldung.eltern;
+      $("erkl-telefon").textContent  = letzteAnmeldung.telefon;
+      $("erkl-hinweise").textContent = letzteAnmeldung.hinweise || "keine";
+      zeigeAnmeldeTeil("erklaerung");
+      window.scrollTo(0, 0);
+    }
+
+
+    /* =========================================================
+       6. ÜBERSICHT FÜR DAS WASSERTOR-TEAM
+       ========================================================= */
+
+    function zeigeUebersicht() {
+      const liste = ladeListe(SPEICHER_ANMELDUNGEN);
+      const tabelle = $("anmelde-tabelle");
+      tabelle.innerHTML = ""; // alte Zeilen entfernen
+
+      $("anmelde-zaehler").textContent =
+        "Anmeldungen: " + liste.length + " von mindestens " + MINDEST_ANMELDUNGEN;
+
+      if (liste.length === 0) {
+        const zeile = document.createElement("tr");
+        const leer = zelle("Noch keine Anmeldungen.");
+        leer.colSpan = 5;
+        zeile.appendChild(leer);
+        tabelle.appendChild(zeile);
+        return;
+      }
+
+      liste.forEach(function (a) {
+        const zeile = document.createElement("tr");
+        zeile.appendChild(zelle(a.kind));
+        zeile.appendChild(zelle(a.alter));
+        zeile.appendChild(zelle(a.eltern));
+        zeile.appendChild(zelle(a.telefon));
+        zeile.appendChild(zelle(a.hinweise || "–"));
+        tabelle.appendChild(zeile);
+      });
+    }
+
+    function alleDatenLoeschen() {
+      if (!confirm("Wirklich alle Anmeldungen und Ergebnisse löschen?")) return;
+      speichereListe(SPEICHER_ANMELDUNGEN, []);
+      speichereListe(SPEICHER_ERGEBNISSE, []);
+      zeigeUebersicht();
+    }
+
+    function beispieleNeuLaden() {
+      speichereListe(SPEICHER_ANMELDUNGEN, beispielAnmeldungen());
+      zeigeUebersicht();
+    }
+
+
+    /* =========================================================
+       7. STATIONEN
+       ========================================================= */
+
+    // Baut die Liste aller Stationen mit QR-Code (einmal beim Start)
+    function baueStationenListe() {
+      const liste = $("stationen-liste");
+      // Adresse dieser Seite ohne den Teil hinter dem #
+      const basisAdresse = location.href.split("#")[0];
+
+      STATIONEN.forEach(function (station) {
+        const link = basisAdresse + "#station-" + station.nr;
+
+        const karte = document.createElement("li");
+        karte.className = "station-karte";
+
+        const titel = document.createElement("h3");
+        titel.textContent = "Station " + station.nr + ": " + station.name;
+        karte.appendChild(titel);
+
+        // Platz für den QR-Code
+        const qrFeld = document.createElement("div");
+        qrFeld.className = "qr";
+        karte.appendChild(qrFeld);
+
+        // QR-Code erzeugen, falls die Bibliothek geladen wurde
+        if (typeof QRCode !== "undefined") {
+          new QRCode(qrFeld, {
+            text: link,
+            width: 180,
+            height: 180,
+            colorDark: "#000000",
+            colorLight: "#ffffff"
+          });
+        } else {
+          qrFeld.textContent = "QR-Code konnte nicht geladen werden (keine Internetverbindung?).";
+          qrFeld.className = "hinweis";
+        }
+
+        const linkText = document.createElement("p");
+        linkText.className = "link-text";
+        linkText.textContent = link;
+        karte.appendChild(linkText);
+
+        const oeffnen = document.createElement("a");
+        oeffnen.href = "#station-" + station.nr;
+        oeffnen.className = "button zweitrangig";
+        oeffnen.textContent = "Station öffnen";
+        karte.appendChild(oeffnen);
+
+        liste.appendChild(karte);
+      });
+    }
+
+    let aktuelleStation = null; // welche Station gerade offen ist
+
+    // Zeigt eine einzelne Station (z. B. nach dem Scannen des QR-Codes)
+    function zeigeStation(nr) {
+      const station = findeStation(nr);
+      aktuelleStation = station;
+
+      $("station-nummer").textContent  = "Station " + station.nr + " von " + STATIONEN.length;
+      $("station-name").textContent    = station.name;
+      $("station-aufgabe").textContent = station.aufgabe;
+
+      // Passendes Eingabefeld zeigen
+      const istRaetsel = (station.typ === "raetsel");
+      $("feld-punkte").hidden  = istRaetsel;
+      $("feld-loesung").hidden = !istRaetsel;
+
+      // Formular leeren, Teamnamen aber vorausfüllen (bequemer fürs Team)
+      $("station-formular").reset();
+      $("team-name").value = localStorage.getItem(SPEICHER_TEAM) || "";
+      $("station-fehler").hidden = true;
+      $("station-meldung").hidden = true;
+      $("station-formular").hidden = false;
+    }
+
+    // Macht Antworten vergleichbar: klein, ohne Leerzeichen/Punkte, ß = ss
+    function vereinfache(text) {
+      return text.toLowerCase().replace(/ß/g, "ss").replace(/[\s.\-]/g, "");
+    }
+
+    function stationSpeichern(ereignis) {
+      ereignis.preventDefault();
+      const station = aktuelleStation;
+      const team = $("team-name").value.trim();
+      const fehlerBox = $("station-fehler");
+
+      if (!team) {
+        fehlerBox.textContent = "Bitte gebt euren Teamnamen ein.";
+        fehlerBox.hidden = false;
+        return;
+      }
+
+      let punkte;
+      let rueckmeldung;
+
+      if (station.typ === "raetsel") {
+        const antwort = $("loesung").value.trim();
+        if (!antwort) {
+          fehlerBox.textContent = "Bitte schreibt eure Lösung in das Feld.";
+          fehlerBox.hidden = false;
+          return;
+        }
+        // "Wassertorstr." zählt auch: Wir vergleichen nur den Anfang
+        const richtig = vereinfache(antwort).startsWith(vereinfache(station.loesung).slice(0, 12));
+        punkte = richtig ? RAETSEL_PUNKTE_RICHTIG : RAETSEL_PUNKTE_VERSUCHT;
+        rueckmeldung = richtig
+          ? "Richtig! Ihr bekommt " + punkte + " Punkte."
+          : "Nicht ganz. Die Lösung ist: " + station.loesung + ". Fürs Mitmachen bekommt ihr " + punkte + " Punkte.";
+      } else {
+        const wert = $("punkte").value;
+        if (wert === "") {
+          fehlerBox.textContent = "Bitte wählt die Punkte aus.";
+          fehlerBox.hidden = false;
+          return;
+        }
+        punkte = Number(wert);
+        rueckmeldung = "Ihr habt " + punkte + " Punkte an dieser Station.";
+      }
+      fehlerBox.hidden = true;
+
+      // Ergebnis speichern. Hat das Team diese Station schon gespeichert,
+      // wird der alte Eintrag ersetzt (Groß-/Kleinschreibung egal).
+      const ergebnisse = ladeListe(SPEICHER_ERGEBNISSE).filter(function (e) {
+        return !(e.station === station.nr && e.team.toLowerCase() === team.toLowerCase());
+      });
+      ergebnisse.push({ team: team, station: station.nr, punkte: punkte });
+      speichereListe(SPEICHER_ERGEBNISSE, ergebnisse);
+      localStorage.setItem(SPEICHER_TEAM, team);
+
+      $("station-formular").hidden = true;
+      const meldung = $("station-meldung");
+      meldung.textContent = "Gespeichert, Team " + team + "! " + rueckmeldung + " Weiter geht's zur nächsten Station.";
+      meldung.hidden = false;
+    }
+
+
+    /* =========================================================
+       8. ERGEBNISSE
+       Eine Zeile pro Team, eine Spalte pro Station, dazu die Summe.
+       Bewusst alphabetisch sortiert und ohne Hervorhebung.
+       ========================================================= */
+
+    function zeigeErgebnisse() {
+      const ergebnisse = ladeListe(SPEICHER_ERGEBNISSE);
+
+      // Tabellenkopf: Team | Station 1 ... Station 5 | Summe
+      const kopf = $("ergebnis-kopf");
+      kopf.innerHTML = "";
+      const kopfZeile = document.createElement("tr");
+      const thTeam = document.createElement("th");
+      thTeam.textContent = "Team";
+      kopfZeile.appendChild(thTeam);
+      STATIONEN.forEach(function (s) {
+        const th = document.createElement("th");
+        th.className = "zahl";
+        th.textContent = s.nr + ". " + s.name;
+        kopfZeile.appendChild(th);
+      });
+      const thSumme = document.createElement("th");
+      thSumme.className = "zahl";
+      thSumme.textContent = "Summe";
+      kopfZeile.appendChild(thSumme);
+      kopf.appendChild(kopfZeile);
+
+      // Ergebnisse nach Team gruppieren: { "löwen": { name: "Löwen", punkte: {1: 8, 3: 6} } }
+      const teams = {};
+      ergebnisse.forEach(function (e) {
+        const schluessel = e.team.toLowerCase();
+        if (!teams[schluessel]) teams[schluessel] = { name: e.team, punkte: {} };
+        teams[schluessel].punkte[e.station] = e.punkte;
+      });
+
+      const tabelle = $("ergebnis-tabelle");
+      tabelle.innerHTML = "";
+
+      const namen = Object.keys(teams).sort(function (a, b) { return a.localeCompare(b, "de"); });
+
+      if (namen.length === 0) {
+        const zeile = document.createElement("tr");
+        const leer = zelle("Noch keine Ergebnisse. Öffnet eine Station und speichert Punkte.");
+        leer.colSpan = STATIONEN.length + 2;
+        zeile.appendChild(leer);
+        tabelle.appendChild(zeile);
+        return;
+      }
+
+      namen.forEach(function (schluessel) {
+        const team = teams[schluessel];
+        const zeile = document.createElement("tr");
+        zeile.appendChild(zelle(team.name));
+
+        let summe = 0;
+        STATIONEN.forEach(function (s) {
+          const p = team.punkte[s.nr];
+          if (p === undefined) {
+            zeile.appendChild(zelle("–", "zahl")); // Station noch nicht gespielt
+          } else {
+            summe += p;
+            zeile.appendChild(zelle(p, "zahl"));
+          }
+        });
+        zeile.appendChild(zelle(summe, "zahl"));
+        tabelle.appendChild(zeile);
+      });
+    }
+
+
+    /* =========================================================
+       9. START: alles vorbereiten und verbinden
+       ========================================================= */
+
+    // Auswahllisten füllen: Alter 6–18 und Punkte 0–10
+    function fuelleAuswahl(selectId, von, bis) {
+      const select = $(selectId);
+      for (let i = von; i <= bis; i++) {
+        const option = document.createElement("option");
+        option.value = i;
+        option.textContent = i;
+        select.appendChild(option);
+      }
+    }
+
+    fuelleAuswahl("kind-alter", 6, 18);
+    fuelleAuswahl("punkte", 0, 10);
+    $("datum-anzeige").textContent = DATUM;
+
+    beimErstenOeffnen();
+    baueStationenListe();
+
+    // Buttons und Formulare mit ihren Funktionen verbinden
+    $("anmelde-formular").addEventListener("submit", anmeldungAbsenden);
+    $("erklaerung-zeigen").addEventListener("click", zeigeErklaerung);
+    $("neue-anmeldung").addEventListener("click", function () { zeigeAnmeldeTeil("formular"); });
+    $("drucken").addEventListener("click", function () { window.print(); });
+    $("erklaerung-schliessen").addEventListener("click", function () { zeigeAnmeldeTeil("bestaetigung"); });
+    $("daten-loeschen").addEventListener("click", alleDatenLoeschen);
+    $("beispiele-laden").addEventListener("click", beispieleNeuLaden);
+    $("station-formular").addEventListener("submit", stationSpeichern);
+
+    // Bei jeder Änderung hinter dem # den passenden Bereich zeigen
+    window.addEventListener("hashchange", zeigeBereich);
+    zeigeBereich();
+  </script>
+</body>
+</html>

@@ -206,7 +206,6 @@
     .station-karte h3 { margin-top: 0; }
     .qr { width: 180px; height: 180px; margin: 12px 0; }
     .qr img, .qr canvas { display: block; }
-    .link-text { font-size: 13px; color: var(--grau); word-break: break-all; }
 
     .station-nummer { color: var(--grau); margin-bottom: 0; }
     .aufgabe { font-size: 20px; }
@@ -805,11 +804,6 @@
           qrFeld.textContent = "QR-Code konnte nicht geladen werden (keine Internetverbindung?).";
           qrFeld.className = "hinweis";
         }
-
-        const linkText = document.createElement("p");
-        linkText.className = "link-text";
-        linkText.textContent = link;
-        karte.appendChild(linkText);
 
         const oeffnen = document.createElement("a");
         oeffnen.href = "#station-" + station.nr;
